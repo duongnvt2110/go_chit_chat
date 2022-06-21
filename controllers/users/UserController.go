@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"gochitchat/model/psql"
 	"net/http"
 	"time"
@@ -22,6 +21,8 @@ const (
 	GetUserQuery = "SELECT * FROM users";
 	CreateUserQuery = "INSERT INTO users (uuid,name,email,password,created_at) values($1,$2,$3,$4,$5)"
 	ValidationUuidQuery = "SELECT uuid FROM users where uuid = $1"
+	UpdateUserQuery = "UPDATE users SET name = $1, email = $2 where uuid = $3"
+	DeleteUserQuery = "DELETE FROM users where uuid = $1"
 )
 
 func Index(w http.ResponseWriter, r *http.Request){
@@ -62,7 +63,6 @@ func Create(w http.ResponseWriter, r *http.Request){
 	body := json.NewDecoder(r.Body)
 	var user User
 	err := body.Decode(&user)
-	fmt.Println(user.Id)
 	if err != nil {
 		http.Error(w, http.StatusText(500),http.StatusInternalServerError) 
 		return 
@@ -97,10 +97,38 @@ func Edit(){
 
 }
 
-func Update(){
-	
+func Update(w http.ResponseWriter, r *http.Request){
+	body := json.NewDecoder(r.Body)
+	var user User
+	err := body.Decode(&user)
+	if err != nil {
+		panic(err)
+		http.Error(w, http.StatusText(500),http.StatusInternalServerError) 
+		return 
+	}
+	// execute update func
+	_, err = psql.Psql.Exec(UpdateUserQuery, user.Name, user.Email, user.Uuid)
+	if err != nil {
+		panic(err)
+		http.Error(w, http.StatusText(500),http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("update to create"))
 }
 
-func Delete(){
-	
+func Delete(w http.ResponseWriter, r *http.Request){
+	body := json.NewDecoder(r.Body)
+	var user User
+	err := body.Decode(&user)
+	if err != nil {
+		http.Error(w, http.StatusText(500),http.StatusInternalServerError) 
+		return 
+	}
+	// execute update func
+	_, err = psql.Psql.Exec(DeleteUserQuery, user.Uuid)
+	if err != nil {
+		http.Error(w, http.StatusText(500),http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("delete to create"))
 }
